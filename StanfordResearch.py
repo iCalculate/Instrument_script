@@ -340,7 +340,7 @@ number of periods during a scan is allowed, defaults to 0
 			self.write('DL ' + ('0,' if channel=='ch1' else '1,') \
 						+ str(level))
 
-	def set_count_preset(self, channel = 'T', time = 1.0, freqB = 1E3,query = False):
+	def set_count_preset(self, channel = 'T', t = 1.0, freqB = 1E3,query = False):
 		'''
 		:param channel: 'B' or 'T' for corresponding channel, defaults to 'T'
 		:param time: preset time, defaults to 1.0
@@ -354,12 +354,12 @@ number of periods during a scan is allowed, defaults to 0
 			if query: 
 				return self.query('CP 1')
 			else:
-				self.write('CP 1,%G' %(round(time*freqB)))	
+				self.write('CP 1,%G' %(round(t*freqB)))	
 		elif channel == 'T':
 			if query: 
 				return self.query('CP 2')
 			else:
-				self.write('CP 2,%G' %(round(time*1E7)))
+				self.write('CP 2,%G' %(round(t*1E7)))
 	
 	def set_count_input(self, counter = 'A', source = 'INPUT1', query:bool = False):
 		counter_dict = {'A':0, 'B':1, 'T':2}
