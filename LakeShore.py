@@ -82,7 +82,7 @@ control loop sensor).
 			nowtemp = self.query("KRDG? " + str(channel))
 		return float(nowtemp)
 	
-	def set_temp_stable(self, channel, aim:float, length = 10, threshold = 1e-3, tsample = 1, realtime = True):
+	def set_temp_stable(self, channel, aim:float, length = 600, threshold = 1e-4, tsample = 0.1, realtime = True):
 		'''
 		:param channel: select the operation channel from 1-4
 		:param aim: float aim temperature unit K
