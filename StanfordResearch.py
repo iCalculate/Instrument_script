@@ -86,7 +86,7 @@ class SR542 (object):
 		else:
 			print("Illegal internal frequency value")
 	
-class sr400(object):
+class SR400(object):
 	def __init__(self, visa_name, timeout:int = 5000):
 		rm = pyvisa.ResourceManager()
 		self.pyvisa = rm.open_resource(visa_name)

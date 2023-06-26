@@ -7,9 +7,13 @@ import time
 import LakeShore
 import Keithley
 import StanfordResearch
+import os
+import scipy.io
 import numpy as np
 import matplotlib.pyplot as plt
  
+DevName = 'xxx-x-x'
+
 Model336_GPIB_Addr = 12 # LakeShoreM336 Temperature controler GPIB address is 12
 Keithley2400_GPIB_Addr = 3  # Keithley 2400 SourceMeter GPIB address is 3
 Keithley2450_GPIB_Addr = 18  # Keithley 2400 SourceMeter GPIB address is 3
@@ -20,7 +24,7 @@ SR542_COM_Addr = 3      # SR542 Chopper serial port address is 1
 Md336 = LakeShore.Model335('GPIB0::' + str(Model336_GPIB_Addr) + '::INSTR')
 SMU2400 = Keithley.Model2400('GPIB0::' + str(Keithley2400_GPIB_Addr) + '::INSTR')
 SMU2450 = Keithley.Model2450('GPIB0::' + str(Keithley2450_GPIB_Addr) + '::INSTR')
-SR400 = StanfordResearch.sr400('GPIB0::' + str(SR400_GPIB_Addr) + '::INSTR')
+SR400 = StanfordResearch.SR400('GPIB0::' + str(SR400_GPIB_Addr) + '::INSTR')
 Chopper = StanfordResearch.SR542('COM' + str(SR542_COM_Addr))
 
 # LakeShore 335/336 code template
@@ -69,23 +73,30 @@ dataIbS = SMU2400.executeCurrBiasStep(start = 0, stop = 1e-3, stepnum = 6, num =
 
 # Stanford Research SR400 code template
 
-
-
-
-
+SR400.set_count_input(counter = 'A', source = 'INPUT1') # couple input1 to A port
+SR400.set_disc_mode(channel = 1, fixed=True)   # set counter A with fixed disc mode
+SR400.set_disc_level(channel = 'ch1', level = 2e-3, slope = True) # set counter A disc {level} and trigger mode {slope}
+SR400.set_count_preset(channel = 'T', t = 0.5)  # set preset {channel} and preset time{t}
+SR400.display_mode(conti=False)  # set display mode as finised and display
+SR400.lcd_message(message = 'Test SR400...')  # Custom display
+SR400.scan_end_mode(mode = 'STOP') # Stop counting while count finish
+SR400.count_restart()
+while(not SR400.check_count_finish()):  # wait for count finished
+	countNum = SR400.read_last_count(channel = 'ch1')  # get last count number
+	SR400.count_stop()
+	
 
 # Stanfrod Research SR542 code template
 
-Chopper.inter_freq(freq = 50.0, query = False)
-Chopper.mult(mult = 1)
-Chopper.divr(divr = 50)
+Chopper.inter_freq(freq = 50.0, query = False)  # set internal freq F = freq_internal*mult/divr
+Chopper.mult(mult = 1)   # set multiplier
+Chopper.divr(divr = 50)  # set divisor
 Chopper.disp(mode = 0)   # Chopper Display the OUTER frequency
-Chopper.on()
+Chopper.on()   # Start chopper
 time.sleep(10)
 print("\tThe chopping freq = ", end='')
-print(Chopper.read_freq(mode = 0), end='')  #OUTER
-Chopper.off()
-
+print(Chopper.read_freq(mode = 0), end='')  # read {mode} freqency 0 for outer freq
+Chopper.off()  # Stop chopper
 
 
 # close the GPIB communication interface
@@ -95,4 +106,17 @@ SMU2400.close()
 SMU2450.close()
 Chopper.close()
 
+# Data preservation code template
 
+if not os.path.isdir(DevName): os.mkdir(DevName)  # Create a device name folder in the root path
+	
+curtime = time.strftime('%y-%m-%d_%H-%M-%S')
+SavePath = os.path.join(DevName, f'{DevName}_XXXX_[{curtime}]' )
+# save test data as ACSII text file
+# SMU data format: [Volt, Curr, Resis, Time, Status]
+np.savetxt(SavePath + '.txt', np.array(dataIS), fmt="%e", delimiter="\t",\
+		   header="Voltage(V)\tCurrent(A)\tResistance(Ohm)\tStatus\tTime(s)")
+# save test data as matlab data file 
+scipy.io.savemat(SavePath +'.mat', \
+				 mdict = {'volt':np.array(dataIS)[:,0], 'curr':np.array(dataIS)[:,1], \
+					      'resis':np.array(dataIS)[:,2], 't':np.array(dataIS)[:,4]})
