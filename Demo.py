@@ -7,6 +7,7 @@ import time
 import LakeShore
 import Keithley
 import StanfordResearch
+import EXFO
 import os
 import scipy.io
 import numpy as np
@@ -18,14 +19,18 @@ Model336_GPIB_Addr = 12 # LakeShoreM336 Temperature controler GPIB address is 12
 Keithley2400_GPIB_Addr = 3  # Keithley 2400 SourceMeter GPIB address is 3
 Keithley2450_GPIB_Addr = 18  # Keithley 2400 SourceMeter GPIB address is 3
 SR400_GPIB_Addr = 18  # Keithley 2400 SourceMeter GPIB address is 3
+FVA3100_GPIB_Addr = 10  # FVA3100 variable attenuator GPIB address is 3
 SR542_COM_Addr = 3      # SR542 Chopper serial port address is 1
+
 
 # Initialization instrument interface
 Md336 = LakeShore.Model335('GPIB0::' + str(Model336_GPIB_Addr) + '::INSTR')
 SMU2400 = Keithley.Model2400('GPIB0::' + str(Keithley2400_GPIB_Addr) + '::INSTR')
 SMU2450 = Keithley.Model2450('GPIB0::' + str(Keithley2450_GPIB_Addr) + '::INSTR')
 SR400 = StanfordResearch.SR400('GPIB0::' + str(SR400_GPIB_Addr) + '::INSTR')
+ATTEN = EXFO.FVA3100('GPIB0::' + str(FVA3100_GPIB_Addr) + '::INSTR')
 Chopper = StanfordResearch.SR542('COM' + str(SR542_COM_Addr))
+
 
 # LakeShore 335/336 code template
 TempA = Md336.read_temperature(channel = 1)   # read sample(A) temperature
@@ -55,6 +60,7 @@ dataIS = SMU2450.executeCurrSweep(top = 1e-3, num = 20)   # Current sweep form 0
 dataIb = SMU2450.executeCurrBias(bias = 1e-3, num = 20)   # Current bias at {bias} with {num} point
 dataIbS = SMU2450.executeCurrBiasStep(start = 0, stop = 1e-3, stepnum = 5, num = 10)  
  
+
 #---------Keithley 2400------------#
 SMU2400.initSourceVolt()  # Initialize the voltage source
 SMU2400.initSenseCurr(currComp = 0.01)   # Initialize current sample and current complience
@@ -72,7 +78,6 @@ dataIbS = SMU2400.executeCurrBiasStep(start = 0, stop = 1e-3, stepnum = 6, num =
 
 
 # Stanford Research SR400 code template
-
 SR400.set_count_input(counter = 'A', source = 'INPUT1') # couple input1 to A port
 SR400.set_disc_mode(channel = 1, fixed=True)   # set counter A with fixed disc mode
 SR400.set_disc_level(channel = 'ch1', level = 2e-3, slope = True) # set counter A disc {level} and trigger mode {slope}
@@ -85,9 +90,8 @@ while(not SR400.check_count_finish()):  # wait for count finished
 	countNum = SR400.read_last_count(channel = 'ch1')  # get last count number
 	SR400.count_stop()
 	
-
+	
 # Stanfrod Research SR542 code template
-
 Chopper.inter_freq(freq = 50.0, query = False)  # set internal freq F = freq_internal*mult/divr
 Chopper.mult(mult = 1)   # set multiplier
 Chopper.divr(divr = 50)  # set divisor
@@ -99,15 +103,25 @@ print(Chopper.read_freq(mode = 0), end='')  # read {mode} freqency 0 for outer f
 Chopper.off()  # Stop chopper
 
 
+# FVA3100 Variable Attenuator code template
+ATTEN.set_fiber(multimode=True)  # set attenuator fiber mode as multimode fiber
+ATTEN.set_mode(absolute=True)   # set attenuator work at absolute mode
+ATTEN.set_wavelength(wavelength=1550.0)  # set wavelength to 1550 nm
+ATTEN.set_offset(offset=0.0)    # set offset to 0 dB
+ATTEN.set_attenuation(atten=-20.0)  # set attenuation multiple to -20 dB
+ATTEN.set_shutter(shutter=True)   # turn shutter ON
+
+
 # close the GPIB communication interface
 Md336.close()
 SR400.close()
 SMU2400.close()
 SMU2450.close()
 Chopper.close()
+ATTEN.close()
+
 
 # Data preservation code template
-
 if not os.path.isdir(DevName): os.mkdir(DevName)  # Create a device name folder in the root path
 	
 curtime = time.strftime('%y-%m-%d_%H-%M-%S')
