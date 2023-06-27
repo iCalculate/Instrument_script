@@ -15,8 +15,7 @@ The current version[v0.1] supports the following devices:
 
 - Lake Shore Model 336: Cryogenic Temperature Controller
 
-- EXFO FVA-3100: Variable Attenuator **[To be updated...]**
-
+- EXFO FVA-3100: Variable Attenuator
   ........
 
 See Demo.py for details on how to use library scripts
