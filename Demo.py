@@ -20,6 +20,7 @@ Keithley2400_GPIB_Addr = 3  # Keithley 2400 SourceMeter GPIB address is 3
 Keithley2450_GPIB_Addr = 18  # Keithley 2400 SourceMeter GPIB address is 3
 SR400_GPIB_Addr = 18  # Keithley 2400 SourceMeter GPIB address is 3
 FVA3100_GPIB_Addr = 10  # FVA3100 variable attenuator GPIB address is 3
+SR830_GPIB_Addr = 1  # SR830 Lock-in Amplifer GPIB address is 3
 SR542_COM_Addr = 3      # SR542 Chopper serial port address is 1
 
 
