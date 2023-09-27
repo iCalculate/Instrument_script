@@ -4,8 +4,9 @@ LakeShore Model335/336 comm. lib.
 Du X.C., June 2023, Univ. of Electronic Science and Technology of China
 Installed PyVISA for GPIB communication.
 """
-import pyvisa
+
 import serial
+import pyvisa
 import datetime
 import time
 
@@ -78,7 +79,7 @@ class SR542 (object):
 		else:
 			print("Incorrect freq_monitor mode index")
 			
-	def inter_freq(self, freq:float = 100, query = True):
+	def inter_freq(self, freq:float = 100, query = False):
 		if query:
 			return self.query("IFRQ?")
 		elif 1.0<=freq<=1000.0:
@@ -86,6 +87,7 @@ class SR542 (object):
 		else:
 			print("Illegal internal frequency value")
 	
+
 class SR400(object):
 	def __init__(self, visa_name, timeout:int = 5000):
 		rm = pyvisa.ResourceManager()
@@ -376,13 +378,14 @@ number of periods during a scan is allowed, defaults to 0
 			else:
 				print('Illegal port mapping!')
 					
+
 class SR830(object):
 	def __init__(self, visa_name, timeout:int = 5000):
 		rm = pyvisa.ResourceManager()
 		self.pyvisa = rm.open_resource(visa_name)
 		self.pyvisa.timeout = 500 # Wait for instrument return value, default is infinite wait
 		print(visa_name+' ->')
-		print(self.pyvisa.query("*IDN?"))
+		print(self.pyvisa.query('*IDN?'))
 	
 	def close(self):
 		try:
@@ -685,7 +688,7 @@ phase shift.
 		The parameter i selects the display buffer (i=1, 2) and is required. Points are read from the buffer starting at bin j (j³0). A total of k bins are read (k³1). To read a single point, set k=1. Both j and k are required. If j+k exceeds the number of stored points (as returned by the SPTS? query), then an error occurs. Remember, SPTS? returns N where N is the total number of bins - the TRCA? command numbers the bins from 0 (oldest) to N-1 (most recent). If data storage is set to Loop mode, make sure that storage is paused before reading any data. This is because the points are indexed relative to the most recent point which is continually
 changing.
 		'''
-		buffer_str = SR830.query(f'TRCA ? {buffer},{start},{num}')
+		buffer_str = self.query(f'TRCA ? {buffer},{start},{num}')
 		buffer_data = [float(i) for i in buffer_str.split(',')[0:-1]]
 		return buffer_data
 	
@@ -723,3 +726,4 @@ changing.
 		
 		
 			
+	

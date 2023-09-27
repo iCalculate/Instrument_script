@@ -84,7 +84,7 @@ class Model2450(object):
 		
 	def executeCustomCurrSweep(self, currList:list, rev = False):
 		nowtime = datetime.datetime.now().strftime('%H:%M:%S')
-		print(f'[{nowtime}] Execute Custom Current Sweep with {len(currList)} points...')
+		print(f'[{nowtime}] Execute Custom Current Sweep with {len(currList)} points...',end='')
 		dataMat = []
 		if rev == True:
 			currList.extend(currList[::-1])
@@ -109,18 +109,23 @@ class Model2450(object):
 		print(f'[{nowtime}] --> Current Sweep Finished!')
 		return dataMat
 
-	def executeCurrSweep(self, top, num, loop = False ,polar = True):
+	def executeCurrSweep(self, top, num, rev = True, loop = False ,polar = True, sleeptime = 0):
 		nowtime = datetime.datetime.now().strftime('%H:%M:%S')
 		print(f'[{nowtime}] Execute Current Sweep from 0 to {top}A with {num} points...')
 		dataMat = []
 		currList = [i/num*top for i in list(range(0, num+1))]
-		currList.extend(currList[::-1])
+		if rev ==True: currList.extend(currList[::-1])
 		if loop == True:
 			currList.extend([-i for i in currList])
 		start_time = time.time()
 		self.beeper(freq=4000,t=0.2,loop=1)
+		cycle = 0
+		self.smu.source_current = currList[0]
 		self.on()
+		time.sleep(sleeptime)
 		for I in currList:
+			print(f'\rrate of process: {(cycle-1)/num*50:.2f}%',end='')
+			cycle += 1
 			#self.smu.ramp_to_voltage(I,steps = 1,pause=0.0)
 			self.smu.source_current = I
 			curr = I
@@ -135,6 +140,7 @@ class Model2450(object):
 		self.off()
 		self.beeper(freq=4000,t=0.2,loop=2)
 		nowtime = datetime.datetime.now().strftime('%H:%M:%S')
+		print('\r',end='')
 		print(f'[{nowtime}] --> Current Sweep Finished!')
 		return dataMat
 	
@@ -256,8 +262,11 @@ class Model2450(object):
 		dataMat = []
 		self.smu.source_current = bias
 		start_time = time.time()
-		self.on()		
+		self.on()	
+		cycle = 0
 		for i in range(num):
+			cycle += 1
+			print(f'\rrate of process: {cycle/num*100:.2f}%',end='')
 			t = time.time()-start_time
 			volt = self.getVoltData()
 			resis = volt/bias
@@ -265,7 +274,7 @@ class Model2450(object):
 		self.off()
 		self.beeper(freq=4000,t=0.2,loop=2)
 		nowtime = datetime.datetime.now().strftime('%H:%M:%S')
-		print(f'[{nowtime}] --> Current Bias Finished!')
+		print(f'\r[{nowtime}] --> Current Bias Finished!')
 		return dataMat
 	
 	def executeVoltBias(self, bias, num):
@@ -295,7 +304,10 @@ class Model2450(object):
 		self.smu.source_current = currList[0]
 		start_time = time.time()
 		self.on()
+		cycle = 0
 		for Ibias in currList:
+			cycle += 1
+			print(f'\rrate of process: {cycle}/{stepnum+1} loops at {Ibias*1e3:.3f} mA%',end='')
 			self.smu.source_current = Ibias
 			for i in range(num):
 				t = time.time()-start_time
@@ -308,7 +320,7 @@ class Model2450(object):
 		self.off()
 		self.beeper(freq=4000,t=0.2,loop=2)
 		nowtime = datetime.datetime.now().strftime('%H:%M:%S')
-		print(f'[{nowtime}] --> Current Bias Step Finished!')
+		print(f'\r[{nowtime}] --> Current Bias Step Finished!')
 		return dataMat
 	
 	def executeVoltBiasStep(self, start, stop, stepnum, num):
@@ -333,6 +345,8 @@ class Model2450(object):
 		print(f'[{nowtime}] --> Voltage Bias Step Finished!')
 		return dataMat
 		
+		
+			
 class Model2400(object):
 	def __init__(self, visa_name, timeout:int = 5000):
 		rm = pyvisa.ResourceManager()
@@ -443,23 +457,6 @@ class Model2400(object):
 		print(f'[{nowtime}] --> Current Sweep Finished!')
 		return dataMat
 	
-	def executeCurrCustomSweep(self, currList:list, rev = False):
-		nowtime = datetime.datetime.now().strftime('%H:%M:%S')
-		num = len(currList)
-		print(f'[{nowtime}] Execute Current Custom Sweep with {num} points...')
-		dataMat = []
-		if rev == True:
-			currList.extend(currList[::-1])
-		self.on()
-		for I in currList:
-			self.setSourceCurr(I)
-			dataMat.append(self.getData())
-		self.off()
-		self.beeper(freq=4000,t=0.2,loop=2)
-		nowtime = datetime.datetime.now().strftime('%H:%M:%S')
-		print(f'[{nowtime}] --> Current Custom Sweep Finished!')
-		return dataMat
-	
 	def executeVoltSweep(self, top, num, loop = False ,polar = True):
 		nowtime = datetime.datetime.now().strftime('%H:%M:%S')
 		print(f'[{nowtime}] Execute Voltage Sweep from 0 to {top}V with {num} points...')
@@ -476,23 +473,6 @@ class Model2400(object):
 		self.beeper(freq=4000,t=0.2,loop=2)
 		nowtime = datetime.datetime.now().strftime('%H:%M:%S')
 		print(f'[{nowtime}] --> Voltage Sweep Finished!')
-		return dataMat
-	
-	def executeVoltCustomSweep(self, voltList:list, rev = False):
-		nowtime = datetime.datetime.now().strftime('%H:%M:%S')
-		num = len(voltList)
-		print(f'[{nowtime}] Execute Voltage Custom Sweep with {num} points...')
-		dataMat = []
-		if rev == True:
-			voltList.extend(voltList[::-1])
-		self.on()
-		for V in voltList:
-			self.setSourceVolt(V)
-			dataMat.append(self.getData())
-		self.off()
-		self.beeper(freq=4000,t=0.2,loop=2)
-		nowtime = datetime.datetime.now().strftime('%H:%M:%S')
-		print(f'[{nowtime}] --> Current Voltage Custom Sweep Finished!')
 		return dataMat
 	
 	def executeCurrBias(self, bias, num):

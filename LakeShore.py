@@ -54,6 +54,36 @@ control loop sensor).
 		'''
 		self.write("RANGE " + str(channel) + "," + str(ranges))
 		
+	def set_ramp_state(self, channel, state:bool, rate:float = 10.0, query:bool = False):
+		'''
+		
+		:param channel: Specifies which output’s control loop to configure: 1 or 2.
+		:param state: Specifies whether ramping is 0 = Off or 1 = On.
+		:param rate:  Specifies setpoint ramp rate in kelvin per minute from 0.1 to
+		 100. The rate is always positive, but will respond to ramps up or down. A 
+		 rate of 0 is interpreted as infinite, and will therefore respond as if 
+		 setpoint ramping were off., defaults to 10.0
+		:param query: True for query, defaults to False
+		:type query: bool, optional
+		:return: Ramp Parameter <off/on>,<rate value>[term] n,nnnn (refer to command for description
+
+		'''
+		if query:
+			return self.query("RAMP?")
+		else:
+			self.write("RAMP "+str(channel)+","+str(int(state))+","+str(rate))
+			# self.write(f'RAMP {channel},{int(state)},{rate}')
+			
+	def read_ramp_state(self, channel):
+		'''
+		
+		:param channel: Specifies which output’s control loop to query: 1 or 2
+		:return: <ramp status>[term] <ramp status> 0 = Not ramping, 1 = Setpoint is ramping.
+
+		'''
+		return bool(int(self.query("RAMPST?")))
+		
+		
 	def read_heater_value(self, channel):
 		value = self.query("HTR? "+str(channel))
 		return float(value)/100
@@ -82,7 +112,7 @@ control loop sensor).
 			nowtemp = self.query("KRDG? " + str(channel))
 		return float(nowtemp)
 	
-	def set_temp_stable(self, channel, aim:float, length = 600, threshold = 1e-4, tsample = 0.1, realtime = True):
+	def set_temp_stable(self, channel, aim:float, length = 200, threshold = 1e-4, tsample = 0.1, realtime = True):
 		'''
 		:param channel: select the operation channel from 1-4
 		:param aim: float aim temperature unit K
